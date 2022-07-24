@@ -39,6 +39,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	private boolean requiresUpdate = true;
 	private List<String> favouritePlayers = new ArrayList();
 	private List<String> blacklistPlayers = new ArrayList();
+
+	private HashMap<String, HouseAdvertisement> adverts;
 	private final List<WidgetTarget> widgetsToHighlight = new ArrayList();
 	private final List<WidgetTarget> textToHighlight = new ArrayList();
 	private final HashMap<String, Integer> defaultTextColours = new HashMap();
@@ -69,6 +71,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		log.info("House Advertisement Plus stopped!");
+		resetAll();
 		overlayManager.remove(overlay);
 	}
 
@@ -270,7 +273,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			resetWidgetHighlights();
 
 			final HouseAdvertisementMapper mapper = new HouseAdvertisementMapper(client, favouritePlayers, blacklistPlayers);
-			final HashMap<String, HouseAdvertisement> adverts = mapper.GetHouseAdvertisements();
+			adverts = mapper.GetHouseAdvertisements();
 
 			if (adverts == null || adverts.size() == 0)
 				return;
@@ -309,6 +312,19 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		});
 	}
 
+	private void resetAll()
+	{
+		if (adverts != null)
+		{
+			refreshAdvertState(adverts.values());
+		}
+
+		shouldRenderBoard = true;
+		refreshVisibility();
+		resetWidgetHighlights();
+		resetUpdateState();
+	}
+
 	private void resetUpdateState()
 	{
 		requiresUpdate = true;
@@ -320,6 +336,9 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	{
 		for (HouseAdvertisement advert : ads)
 		{
+			if (advert == null)
+				continue;
+
 			advert.setAsHidden(false);
 		}
 	}
