@@ -33,6 +33,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 {
 	public static final String ConfigGroup = "HouseAdvertisementPlus";
 	private String lastVisited = "";
+
+	private boolean showLocalOnly = false;
 	private boolean advertBoardVisible = false;
 	private boolean shouldRenderBoard = false;
 	private boolean shouldRenderHighlights = false;
@@ -147,6 +149,18 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		{
 			lastVisited = client.getVarcStrValue(AdvertID.LAST_VISIT_VAR_INDEX);
 		}
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		updateLocalOnly();
+	}
+
+	private void updateLocalOnly()
+	{
+		final int localOnly = client.getVarbitValue(AdvertID.LOCAL_ONLY_VARBIT_ID);
+		showLocalOnly = localOnly == 1 ? true : false;
 	}
 
 	private void AddMenuEntries()
@@ -271,6 +285,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		clientThread.invoke(() ->
 		{
 			resetWidgetHighlights();
+			updateLocalOnly();
 
 			final HouseAdvertisementMapper mapper = new HouseAdvertisementMapper(client, favouritePlayers, blacklistPlayers);
 			adverts = mapper.GetHouseAdvertisements();
@@ -283,12 +298,12 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 
 			if (config.useBlacklist())
 			{
-				ApplyBlacklist(adverts);
+				applyBlacklist(adverts);
 			}
 
 			if (config.useFilters())
 			{
-				ApplyFilters(ads);
+				applyFilters(ads);
 			}
 
 			if (config.useFavourites())
@@ -339,7 +354,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			if (advert == null)
 				continue;
 
-			advert.setAsHidden(false);
+			final boolean shouldHide = showLocalOnly && advert.isAnotherLocation();
+			advert.setAsHidden(shouldHide);
 		}
 	}
 
@@ -365,7 +381,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		textToHighlight.clear();
 	}
 
-	private void ApplyBlacklist(HashMap<String, HouseAdvertisement> ads)
+	private void applyBlacklist(HashMap<String, HouseAdvertisement> ads)
 	{
 		for (String playerName : ads.keySet())
 		{
@@ -380,11 +396,11 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	}
 
 
-	private void ApplyFilters(Collection<HouseAdvertisement> ads)
+	private void applyFilters(Collection<HouseAdvertisement> ads)
 	{
 		for (HouseAdvertisement advert : ads)
 		{
-			if (PassesFilter(advert))
+			if (passesFilter(advert))
 				continue;
 
 			advert.setAsHidden(true);
@@ -394,7 +410,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	}
 
 
-	private boolean PassesFilter(HouseAdvertisement advert)
+	private boolean passesFilter(HouseAdvertisement advert)
 	{
 		return (
 			advert.getConstructionLvl() >= config.minConstructionLvl() &&
@@ -466,7 +482,12 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 
 			if (config.highlightEnterButton())
 			{
-				widgetsToHighlight.add(new WidgetTarget(AdvertID.KEY_ENTER, advert.getWidget(AdvertID.KEY_ENTER)));
+				Widget enterArrow = advert.getWidget(AdvertID.KEY_ENTER);
+				if (enterArrow != null)
+				{
+					widgetsToHighlight.add(new WidgetTarget(AdvertID.KEY_ENTER, enterArrow));
+				}
+
 			}
 
 			if (config.highlightAdvertText())

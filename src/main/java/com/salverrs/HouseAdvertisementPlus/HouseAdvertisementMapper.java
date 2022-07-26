@@ -38,10 +38,12 @@ public class HouseAdvertisementMapper {
         final Widget[] poolLvlWidgets = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_POOL_INDEX).getDynamicChildren();
         final Widget[] spellAltarLvlWidgets = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_SPELL_ALTER_INDEX).getDynamicChildren();
         final Widget[] armourStandWidgets = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_ARMOUR_STAND_INDEX).getDynamicChildren();
-        final Widget[] enterArrows = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_ENTER_ARROW_INDEX).getDynamicChildren();
+        final Widget[] enterArrowWidgets = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_ENTER_ARROW_INDEX).getDynamicChildren();
+        final Widget[] locationNameWidgets = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_LOCATION_INDEX).getDynamicChildren();
 
         for (Widget w : playerNameWidgets)
         {
+            final boolean isHidden = w.isHidden();
             final String playerName = AdvertUtil.normalizeName(w.getText());
             final int yOffset = w.getRelativeY();
 
@@ -53,6 +55,7 @@ public class HouseAdvertisementMapper {
             advert.addWidget(AdvertID.KEY_NAME, w);
             advertYOffsetMap.put(yOffset, advert);
             advertPlayerNameMap.put(playerName, advert);
+            advert.setHidden(isHidden);
 
             if (favourites.contains(playerName))
             {
@@ -177,7 +180,7 @@ public class HouseAdvertisementMapper {
             advert.addWidget(AdvertID.KEY_ARMOUR_STAND, w);
         }
 
-        for (Widget w : enterArrows)
+        for (Widget w : enterArrowWidgets)
         {
             final String nameArg = AdvertUtil.getPlayerFromOpArg(w, AdvertID.ADVERT_ARROW_PLAYER_ARG_INDEX);
             if (nameArg == null || nameArg.equals(""))
@@ -188,9 +191,24 @@ public class HouseAdvertisementMapper {
             if (advert == null)
                 continue;
 
+            advert.setAnotherLocation(false);
             advert.addWidget(AdvertID.KEY_ENTER, w);
         }
 
+        for (Widget w : locationNameWidgets)
+        {
+            final int yOffset = w.getRelativeY();
+            final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
+            if (advert == null)
+                continue;
+
+            final String text = w.getText();
+            if (text == null || text.equals(""))
+                continue;
+
+            advert.setLocation(text);
+            advert.addWidget(AdvertID.KEY_LOCATION, w);
+        }
 
         final List<HouseAdvertisement> adverts = new ArrayList(advertPlayerNameMap.values());
         adverts.sort(Comparator.comparing(a -> a.getYOffset()));
@@ -198,7 +216,9 @@ public class HouseAdvertisementMapper {
         int rowIndex = 0;
         for (int i = 0; i < adverts.size(); i++)
         {
-            adverts.get(i).setRowIndex(rowIndex);
+            HouseAdvertisement advert = adverts.get(i);
+            advert.setRowIndex(rowIndex);
+
             rowIndex++;
         }
 

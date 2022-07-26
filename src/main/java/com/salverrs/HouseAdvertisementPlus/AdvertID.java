@@ -20,8 +20,12 @@ public class AdvertID {
     public static final int WIDGET_SPELL_ALTER_INDEX = 17;
     public static final int WIDGET_ARMOUR_STAND_INDEX = 18;
     public static final int WIDGET_ENTER_ARROW_INDEX = 19;
+
+    public static final int WIDGET_LOCATION_INDEX = 10;
     public static final int ADVERT_ARROW_PLAYER_ARG_INDEX = 1;
     public static final int LAST_VISIT_VAR_INDEX = 361;
+
+    public static final int LOCAL_ONLY_VARBIT_ID = 9448;
     public static final String TITLE = "House Advertisement";
     public static final String ENTER_HOUSE_OPTION_TEXT = "Enter House";
     public static final String LAST_VISIT_OPTION_TEXT = "Visit-Last";
@@ -34,4 +38,7 @@ public class AdvertID {
     public static final String KEY_SPELL_ALTAR_LVL = "SPELL_ALTAR";
     public static final String KEY_ARMOUR_STAND = "ARMOUR_STAND";
     public static final String KEY_ENTER = "ENTER";
+    public static final String KEY_LOCATION = "LOCATION";
+
+
 }

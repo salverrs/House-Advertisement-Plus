@@ -13,6 +13,7 @@ public class HouseAdvertisement {
     private int yOffset;
     private int rowIndex;
     private String playerName;
+    private String location;
     private int constructionLvl;
     private boolean hasGuildedAlter;
     private int nexusLvl;
@@ -23,12 +24,14 @@ public class HouseAdvertisement {
     private boolean isFavourite;
     private boolean isBlacklisted;
     private boolean isHidden;
+    private boolean isAnotherLocation;
     private HashMap<String, Widget> advertWidgets;
 
     public HouseAdvertisement(String playerName, int yOffset) {
         this.playerName = playerName;
         this.yOffset = yOffset;
         this.advertWidgets = new HashMap<String, Widget>();
+        isAnotherLocation = true;
     }
 
     public void addWidget(String key, Widget w)
