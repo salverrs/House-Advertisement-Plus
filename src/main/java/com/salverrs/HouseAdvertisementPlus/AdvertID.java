@@ -1,6 +1,24 @@
 package com.salverrs.HouseAdvertisementPlus;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class AdvertID {
+
+    public static List<String> ADVERT_WIDGET_KEYS = Arrays.asList(
+            AdvertID.KEY_NAME,
+            AdvertID.KEY_CONSTRUCTION_LVL,
+            AdvertID.KEY_NEXUS_LVL,
+            AdvertID.KEY_POOL_LVL,
+            AdvertID.KEY_ALTAR,
+            AdvertID.KEY_SPELL_ALTAR_LVL,
+            AdvertID.KEY_ARMOUR_STAND,
+            AdvertID.KEY_JEWELLERY_LVL,
+            AdvertID.KEY_ENTER,
+            AdvertID.KEY_LOCATION
+    );
+
+    public static final int ADVERT_DEFAULT_FONT_ID = 495;
     public static final int UPDATE_ADD_LINE_SCRIPT_ID = 3110;
     public static final int UPDATE_ADD_SORT_SCRIPT_ID = 3112;
     public static final int UPDATE_RE_DRAW_SCRIPT_ID = 3113;

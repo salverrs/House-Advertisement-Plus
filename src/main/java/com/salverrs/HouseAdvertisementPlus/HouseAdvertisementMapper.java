@@ -43,7 +43,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : playerNameWidgets)
         {
-            final boolean isHidden = w.isHidden();
+            if (w.isHidden())
+                continue;
+
             final String playerName = AdvertUtil.normalizeName(w.getText());
             final int yOffset = w.getRelativeY();
 
@@ -55,7 +57,6 @@ public class HouseAdvertisementMapper {
             advert.addWidget(AdvertID.KEY_NAME, w);
             advertYOffsetMap.put(yOffset, advert);
             advertPlayerNameMap.put(playerName, advert);
-            advert.setHidden(isHidden);
 
             if (favourites.contains(playerName))
             {
@@ -70,6 +71,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : constructionLvlWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -86,6 +90,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : guildedAlterWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -102,6 +109,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : nexusLvlWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -118,6 +128,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : jewelleryLvlWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -134,6 +147,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : poolLvlWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -150,6 +166,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : spellAltarLvlWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -166,6 +185,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : armourStandWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)
@@ -182,6 +204,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : enterArrowWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final String nameArg = AdvertUtil.getPlayerFromOpArg(w, AdvertID.ADVERT_ARROW_PLAYER_ARG_INDEX);
             if (nameArg == null || nameArg.equals(""))
                 continue;
@@ -197,6 +222,9 @@ public class HouseAdvertisementMapper {
 
         for (Widget w : locationNameWidgets)
         {
+            if (w.isHidden())
+                continue;
+
             final int yOffset = w.getRelativeY();
             final HouseAdvertisement advert = advertYOffsetMap.get(yOffset);
             if (advert == null)

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -33,8 +34,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 {
 	public static final String ConfigGroup = "HouseAdvertisementPlus";
 	private String lastVisited = "";
-
-	private boolean showLocalOnly = false;
+	private Widget container;
 	private boolean advertBoardVisible = false;
 	private boolean shouldRenderBoard = false;
 	private boolean shouldRenderHighlights = false;
@@ -151,18 +151,6 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		}
 	}
 
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		updateLocalOnly();
-	}
-
-	private void updateLocalOnly()
-	{
-		final int localOnly = client.getVarbitValue(AdvertID.LOCAL_ONLY_VARBIT_ID);
-		showLocalOnly = localOnly == 1 ? true : false;
-	}
-
 	private void AddMenuEntries()
 	{
 		if (client.getGameState() != GameState.LOGGED_IN || client.isMenuOpen())
@@ -189,6 +177,13 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	private void addCustomMenuOptions(MenuEntry entry)
 	{
 		final Widget arrowWidget = entry.getWidget();
+
+		if (arrowWidget.getOpacity() == 255) // Hide menu option for 'hidden' (opacity=255) enter widgets.
+		{
+			client.setMenuEntries(new MenuEntry[0]);
+			return;
+		}
+
 		String playerName = AdvertUtil.getPlayerFromOpArg(arrowWidget, AdvertID.ADVERT_ARROW_PLAYER_ARG_INDEX);
 		if (playerName == null || playerName.equals(""))
 			return;
@@ -285,7 +280,6 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		clientThread.invoke(() ->
 		{
 			resetWidgetHighlights();
-			updateLocalOnly();
 
 			final HouseAdvertisementMapper mapper = new HouseAdvertisementMapper(client, favouritePlayers, blacklistPlayers);
 			adverts = mapper.GetHouseAdvertisements();
@@ -319,6 +313,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 				}
 			}
 
+			moveInvisibleToBottom(ads);
 			shouldRenderBoard = true;
 		});
 
@@ -354,18 +349,18 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			if (advert == null)
 				continue;
 
-			final boolean shouldHide = showLocalOnly && advert.isAnotherLocation();
-			advert.setAsHidden(shouldHide);
+			advert.setIsVisible(true);
 		}
 	}
 
 	private void refreshVisibility()
 	{
-		final Widget container = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_CONTAINER_ID);
+		container = client.getWidget(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_CONTAINER_ID);
 		if (container == null)
 			return;
 
-		container.setHidden(!shouldRenderBoard);
+		container.setType(shouldRenderBoard ? WidgetType.LAYER : -1);
+
 		shouldRenderHighlights = shouldRenderBoard;
 	}
 
@@ -389,10 +384,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			if (!advert.isBlacklisted())
 				continue;
 
-			advert.setAsHidden(true);
+			advert.setIsVisible(false);
 		}
-
-		moveHiddenToBottom(ads.values());
 	}
 
 
@@ -403,10 +396,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			if (passesFilter(advert))
 				continue;
 
-			advert.setAsHidden(true);
+			advert.setIsVisible(false);
 		}
-
-		moveHiddenToBottom(ads);
 	}
 
 
@@ -414,17 +405,17 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	{
 		return (
 			advert.getConstructionLvl() >= config.minConstructionLvl() &&
-			AdvertUtil.YesNoPasses(config.hasGuildedAltar(), advert.isHasGuildedAlter()) &&
+			AdvertUtil.yesNoPasses(config.hasGuildedAltar(), advert.isHasGuildedAlter()) &&
 			advert.getNexusLvl() >= config.minNexusLvl() &&
 			advert.getJewelleryLvl() >= config.minJewelleryLvl() &&
 			advert.getPoolLvl() >= config.minPoolLvl() &&
 			advert.getSpellAltarLvl() >= config.minSpellAltarLvl() &&
-			AdvertUtil.YesNoPasses(config.hasArmourStand(), advert.isHasArmourStand())
+			AdvertUtil.yesNoPasses(config.hasArmourStand(), advert.isHasArmourStand())
 		);
 	}
 
 
-	private void moveHiddenToBottom(Collection<HouseAdvertisement> ads)
+	private void moveInvisibleToBottom(Collection<HouseAdvertisement> ads)
 	{
 		final Queue<HouseAdvertisement> nextSwapTarget = new LinkedList<>();
 		final List<HouseAdvertisement> adverts = new ArrayList(ads);
@@ -433,7 +424,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		for (int i = adverts.size() - 1; i >= 0; i--)
 		{
 			HouseAdvertisement advert = adverts.get(i);
-			if (!advert.isHidden())
+
+			if (advert.isVisible())
 			{
 				nextSwapTarget.add(advert);
 				continue;
@@ -452,16 +444,20 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	{
 		final Queue<HouseAdvertisement> nextSwapTarget = new LinkedList<>();
 		final List<HouseAdvertisement> adverts = new ArrayList(ads);
-		adverts.sort(Comparator.comparing(a -> a.getRowIndex()));
+		final List<HouseAdvertisement> favourites = new ArrayList<>();
 
+		adverts.sort(Comparator.comparing(a -> a.getRowIndex()));
 		for (int i = 0; i < adverts.size(); i++)
 		{
 			HouseAdvertisement advert = adverts.get(i);
-			if (!advert.isFavourite() || advert.isHidden())
+
+			if (!advert.isFavourite() || !advert.isVisible())
 			{
 				nextSwapTarget.add(advert);
 				continue;
 			}
+
+			favourites.add(advert);
 
 			if (nextSwapTarget.isEmpty())
 				continue;
@@ -470,14 +466,40 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			advert.swapRowWith(target);
 			nextSwapTarget.add(target);
 		}
+
+		// Preserve favourite list order
+
+		int favouriteIndex = 0;
+		favourites.sort(Comparator.comparing(a -> a.getRowIndex()));
+		while (favouriteIndex < favourites.size())
+		{
+			final HouseAdvertisement advert = favourites.get(favouriteIndex);
+			final int targetIndex = Math.min(favourites.size() - 1, getFavouriteIndex(advert));
+			final HouseAdvertisement target = favourites.get(targetIndex);
+
+			if (target == advert)
+			{
+				favouriteIndex++;
+				continue;
+			}
+
+			advert.swapRowWith(target);
+			favourites.sort(Comparator.comparing(a -> a.getRowIndex()));
+			favouriteIndex = 0;
+		}
+
 	}
 
+	private int getFavouriteIndex(HouseAdvertisement advert)
+	{
+		return favouritePlayers.indexOf(AdvertUtil.normalizeName(advert.getPlayerName()));
+	}
 
 	private void highlightFavourites(Collection<HouseAdvertisement> adverts)
 	{
 		for (HouseAdvertisement advert : adverts)
 		{
-			if (!advert.isFavourite() || advert.isHidden())
+			if (!advert.isFavourite() || !advert.isVisible())
 				continue;
 
 			if (config.highlightEnterButton())
@@ -487,7 +509,6 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 				{
 					widgetsToHighlight.add(new WidgetTarget(AdvertID.KEY_ENTER, enterArrow));
 				}
-
 			}
 
 			if (config.highlightAdvertText())
@@ -525,7 +546,13 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		final Color highlightColor = config.highlightColor();
 		for (WidgetTarget wt : widgetsToHighlight)
 		{
-			final Rectangle bounds = wt.getWidget().getBounds();
+			Rectangle bounds = wt.getWidget().getBounds();
+
+			if (container != null)
+			{
+				bounds = bounds.intersection(container.getBounds());
+			}
+
 			final int adjustedWidth = bounds.width - (bounds.width / 20);
 			final RoundRectangle2D rounded = new RoundRectangle2D.Double(bounds.x, bounds.y, adjustedWidth, bounds.height, bounds.width / 5, bounds.width / 5);
 			g.setColor(highlightColor);

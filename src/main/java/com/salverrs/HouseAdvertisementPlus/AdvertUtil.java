@@ -4,6 +4,7 @@ import com.salverrs.HouseAdvertisementPlus.Filters.YesNoFilter;
 import net.runelite.api.widgets.Widget;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class AdvertUtil {
@@ -40,7 +41,7 @@ public class AdvertUtil {
         return (String)args[argIndex];
     }
 
-    public static boolean YesNoPasses(YesNoFilter filter, boolean actual)
+    public static boolean yesNoPasses(YesNoFilter filter, boolean actual)
     {
         final int fVal = filter == YesNoFilter.Y ? 1 : 0;
         final int actualVal = actual ? 1 : 0;

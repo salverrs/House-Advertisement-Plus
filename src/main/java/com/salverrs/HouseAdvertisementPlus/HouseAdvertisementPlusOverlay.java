@@ -15,7 +15,8 @@ public class HouseAdvertisementPlusOverlay extends Overlay {
     private HouseAdvertisementPlusPlugin plugin;
 
     public HouseAdvertisementPlusOverlay() {
-        setLayer(OverlayLayer.ABOVE_WIDGETS);
+        setLayer(OverlayLayer.MANUAL);
+        drawAfterLayer(AdvertID.WIDGET_GROUP_ID, AdvertID.WIDGET_CONTAINER_ID);
         setPosition(OverlayPosition.DYNAMIC);
     }
 
