@@ -54,6 +54,7 @@ public class HouseAdvertisementMapper {
 
             final HouseAdvertisement advert = new HouseAdvertisement(playerName, yOffset);
 
+            advert.setOriginalYOffset(yOffset);
             advert.addWidget(AdvertID.KEY_NAME, w);
             advertYOffsetMap.put(yOffset, advert);
             advertPlayerNameMap.put(playerName, advert);
@@ -61,6 +62,11 @@ public class HouseAdvertisementMapper {
             if (favourites.contains(playerName))
             {
                 advert.setFavourite(true);
+                advert.setFavouritePriority(getFavouriteIndex(playerName));
+            }
+            else
+            {
+                advert.setFavouritePriority(-1);
             }
 
             if (blacklist.contains(playerName))
@@ -239,17 +245,28 @@ public class HouseAdvertisementMapper {
         }
 
         final List<HouseAdvertisement> adverts = new ArrayList(advertPlayerNameMap.values());
-        adverts.sort(Comparator.comparing(a -> a.getYOffset()));
+        adverts.sort(Comparator.comparing(a -> a.getOriginalYOffset()));
 
-        int rowIndex = 0;
         for (int i = 0; i < adverts.size(); i++)
         {
             HouseAdvertisement advert = adverts.get(i);
-            advert.setRowIndex(rowIndex);
-
-            rowIndex++;
+            advert.setRowIndex(i);
         }
 
         return advertPlayerNameMap;
     }
+
+    private int getFavouriteIndex(String playerName)
+    {
+        final int index = favourites.indexOf(AdvertUtil.normalizeName(playerName));
+        if (index == -1)
+        {
+            return index;
+        }
+        else
+        {
+            return favourites.size() - index;
+        }
+    }
+
 }

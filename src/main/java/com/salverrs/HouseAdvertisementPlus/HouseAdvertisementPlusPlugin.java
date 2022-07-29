@@ -18,6 +18,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 import java.awt.*;
+import java.awt.geom.Area;
 import java.awt.geom.RoundRectangle2D;
 import java.util.*;
 import java.util.List;
@@ -287,7 +288,8 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 			if (adverts == null || adverts.size() == 0)
 				return;
 
-			Collection<HouseAdvertisement> ads = adverts.values();
+			List<HouseAdvertisement> ads = new ArrayList<>(adverts.values());
+
 			refreshAdvertState(ads);
 
 			if (config.useBlacklist())
@@ -389,7 +391,7 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	}
 
 
-	private void applyFilters(Collection<HouseAdvertisement> ads)
+	private void applyFilters(List<HouseAdvertisement> ads)
 	{
 		for (HouseAdvertisement advert : ads)
 		{
@@ -415,87 +417,28 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 	}
 
 
-	private void moveInvisibleToBottom(Collection<HouseAdvertisement> ads)
+	private void moveInvisibleToBottom(List<HouseAdvertisement> ads)
 	{
-		final Queue<HouseAdvertisement> nextSwapTarget = new LinkedList<>();
-		final List<HouseAdvertisement> adverts = new ArrayList(ads);
-		adverts.sort(Comparator.comparing(a -> a.getRowIndex()));
-
-		for (int i = adverts.size() - 1; i >= 0; i--)
-		{
-			HouseAdvertisement advert = adverts.get(i);
-
-			if (advert.isVisible())
-			{
-				nextSwapTarget.add(advert);
-				continue;
-			}
-
-			if (nextSwapTarget.isEmpty())
-				continue;
-
-			final HouseAdvertisement target = nextSwapTarget.remove();
-			advert.swapRowWith(target);
-			nextSwapTarget.add(target);
-		}
+		ads.sort(Comparator.comparing(a -> !a.isVisible()));
+		revalidateRowOrder(ads);
 	}
 
-	private void moveFavouritesToTop(Collection<HouseAdvertisement> ads)
+	private void moveFavouritesToTop(List<HouseAdvertisement> ads)
 	{
-		final Queue<HouseAdvertisement> nextSwapTarget = new LinkedList<>();
-		final List<HouseAdvertisement> adverts = new ArrayList(ads);
-		final List<HouseAdvertisement> favourites = new ArrayList<>();
+		ads.sort(Comparator.comparing(a -> -a.getFavouritePriority()));
+		revalidateRowOrder(ads);
+	}
 
-		adverts.sort(Comparator.comparing(a -> a.getRowIndex()));
+	private void revalidateRowOrder(List<HouseAdvertisement> adverts)
+	{
 		for (int i = 0; i < adverts.size(); i++)
 		{
 			HouseAdvertisement advert = adverts.get(i);
-
-			if (!advert.isFavourite() || !advert.isVisible())
-			{
-				nextSwapTarget.add(advert);
-				continue;
-			}
-
-			favourites.add(advert);
-
-			if (nextSwapTarget.isEmpty())
-				continue;
-
-			final HouseAdvertisement target = nextSwapTarget.remove();
-			advert.swapRowWith(target);
-			nextSwapTarget.add(target);
+			advert.setRow(i);
 		}
-
-		// Preserve favourite list order
-
-		int favouriteIndex = 0;
-		favourites.sort(Comparator.comparing(a -> a.getRowIndex()));
-		while (favouriteIndex < favourites.size())
-		{
-			final HouseAdvertisement advert = favourites.get(favouriteIndex);
-			final int targetIndex = Math.min(favourites.size() - 1, getFavouriteIndex(advert));
-			final HouseAdvertisement target = favourites.get(targetIndex);
-
-			if (target == advert)
-			{
-				favouriteIndex++;
-				continue;
-			}
-
-			advert.swapRowWith(target);
-			favourites.sort(Comparator.comparing(a -> a.getRowIndex()));
-			favouriteIndex = 0;
-		}
-
 	}
 
-	private int getFavouriteIndex(HouseAdvertisement advert)
-	{
-		return favouritePlayers.indexOf(AdvertUtil.normalizeName(advert.getPlayerName()));
-	}
-
-	private void highlightFavourites(Collection<HouseAdvertisement> adverts)
+	private void highlightFavourites(List<HouseAdvertisement> adverts)
 	{
 		for (HouseAdvertisement advert : adverts)
 		{
@@ -548,15 +491,18 @@ public class HouseAdvertisementPlusPlugin extends Plugin
 		{
 			Rectangle bounds = wt.getWidget().getBounds();
 
-			if (container != null)
-			{
-				bounds = bounds.intersection(container.getBounds());
-			}
-
 			final int adjustedWidth = bounds.width - (bounds.width / 20);
 			final RoundRectangle2D rounded = new RoundRectangle2D.Double(bounds.x, bounds.y, adjustedWidth, bounds.height, bounds.width / 5, bounds.width / 5);
+			final Area roundedArea = new Area(rounded);
+
+			if (container != null)
+			{
+				final Area containerArea = new Area(container.getBounds());
+				roundedArea.intersect(containerArea);
+			}
+
 			g.setColor(highlightColor);
-			g.draw(rounded);
+			g.draw(roundedArea);
 		}
 
 		for (WidgetTarget wt : textToHighlight)
